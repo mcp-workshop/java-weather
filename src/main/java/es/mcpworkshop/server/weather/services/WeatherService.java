@@ -1,9 +1,9 @@
 package es.mcpworkshop.server.weather.services;
 
 import es.mcpworkshop.server.weather.model.Prediccion;
-import reactor.core.publisher.Flux;
+import java.util.List;
 
 public interface WeatherService {
 
-  Flux<Prediccion> getWeatherForecast(String city);
+  List<Prediccion> getWeatherForecast(String city);
 }

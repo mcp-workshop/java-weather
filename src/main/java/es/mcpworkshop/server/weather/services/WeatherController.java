@@ -16,6 +16,6 @@ public class WeatherController {
 
   @GetMapping("/{aemetLocationCode}")
   public Flux<Prediccion> getWeather(@PathVariable String aemetLocationCode) {
-    return weatherService.getWeatherForecast(aemetLocationCode);
+    return Flux.fromIterable(weatherService.getWeatherForecast(aemetLocationCode));
   }
 }

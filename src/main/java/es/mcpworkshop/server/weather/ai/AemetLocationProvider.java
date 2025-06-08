@@ -1,11 +1,11 @@
 package es.mcpworkshop.server.weather.ai;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logaritex.mcp.annotation.McpResource;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.annotation.PostConstruct;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -68,20 +68,22 @@ public class AemetLocationProvider {
   }
 
   @McpResource(
-      uri = "file://municipios",
-      name = "All the locations in AEMET",
-      description = "Provides all the AEMET codes and locations in Spain")
-  public McpSchema.ReadResourceResult getAemetLocations(McpSchema.ReadResourceRequest request) {
+      uri = "file://predictions/{city}",
+      name = "stored predictions for a city",
+      description = "Provides all the weather predictions for a locations in Spain")
+  public McpSchema.ReadResourceResult getAemetPredictions(
+      McpSchema.ReadResourceRequest request, String city) {
     log.info("Retrieving Aemet locations in Spain");
 
     try {
-      String theFile = mapper.writeValueAsString(this.aemetCodes);
+      File file = new File("predictions/" + city + ".json");
+      var lines = String.join("", Files.readAllLines(file.toPath()));
       log.info("Converted Aemet locations in Spain to JSON");
       return new McpSchema.ReadResourceResult(
           List.of(
               new McpSchema.TextResourceContents(
-                  request.uri(), MediaType.APPLICATION_JSON_VALUE, theFile)));
-    } catch (JsonProcessingException e) {
+                  request.uri(), MediaType.TEXT_PLAIN_VALUE, lines)));
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
