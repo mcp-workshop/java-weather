@@ -1,6 +1,8 @@
 package es.mcpworkshop.server.weather.services;
 
+import es.mcpworkshop.server.weather.model.Prediccion;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/weather")
@@ -12,8 +14,8 @@ public class WeatherController {
     this.weatherService = weatherService;
   }
 
-  @GetMapping("/{cityCode}")
-  public Object getWeather(@PathVariable String cityCode) {
-    return weatherService.getWeatherForecast(cityCode);
+  @GetMapping("/{aemetLocationCode}")
+  public Flux<Prediccion> getWeather(@PathVariable String aemetLocationCode) {
+    return weatherService.getWeatherForecast(aemetLocationCode);
   }
 }

@@ -6,6 +6,8 @@ import es.mcpworkshop.server.weather.model.Prediccion;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -31,27 +33,33 @@ public class AemetWeatherService implements WeatherService {
   }
 
   @Override
-  public Flux<Prediccion> getWeatherForecast(String city) {
-    return callAemetProxy(city)
+  @Tool(description = "Retrieves the weather forecast for a location's AEMET code")
+  public Flux<Prediccion> getWeatherForecast(
+      @ToolParam(description = "The location AEMET code") String aemetLocationCode) {
+    return callAemetProxy(aemetLocationCode)
         .flatMapMany(this::callRealMethod)
         .doOnError(error -> log.error("Error en el proceso: ", error));
   }
 
-  private Mono<AemetResponse> callAemetProxy(String city) {
+  private Mono<AemetResponse> callAemetProxy(String aemetLocationCode) {
     return webClient
         .get()
         .uri(
             "/api/prediccion/especifica/municipio/diaria/{municipio_aemet_code}?api_key={api_key}",
-            city,
+            aemetLocationCode,
             apiKey)
         .retrieve()
         .onStatus(
             HttpStatusCode::isError,
-            clientResponse -> Mono.error(new RuntimeException("Error en primera llamada")))
+            clientResponse -> {
+              log.error("Error en el proceso");
+              return Mono.error(new RuntimeException("Error en primera llamada"));
+            })
         .bodyToMono(AemetResponse.class);
   }
 
   private Flux<Prediccion> callRealMethod(AemetResponse aemetResponse) {
+    log.info("Respuesta de AEMET: {}", aemetResponse);
     if (aemetResponse.estado != HttpStatus.OK.value()) {
       return Flux.error(new IllegalArgumentException("URL no válida"));
     }
@@ -63,12 +71,16 @@ public class AemetWeatherService implements WeatherService {
         .flatMapIterable(
             json -> {
               try {
-                return objectMapper.readValue(
-                    json,
-                    objectMapper
-                        .getTypeFactory()
-                        .constructCollectionType(List.class, Prediccion.class));
+                List<Prediccion> prediccion =
+                    objectMapper.readValue(
+                        json,
+                        objectMapper
+                            .getTypeFactory()
+                            .constructCollectionType(List.class, Prediccion.class));
+                log.info("Predicciónes obtenidas: {}", prediccion.size());
+                return prediccion;
               } catch (JsonProcessingException e) {
+                log.error("Error al procesar la respuesta JSON: ", e);
                 throw new RuntimeException(e);
               }
             });

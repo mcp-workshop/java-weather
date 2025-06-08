@@ -1,7 +1,6 @@
 package es.mcpworkshop.server.weather.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.List;
 
 public record Prediccion(
